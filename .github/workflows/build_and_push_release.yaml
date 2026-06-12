@@ -11,7 +11,7 @@ env:
   IMAGE_REGISTRY: quay.io
   GIT_TAG: ${{ github.ref_name }}
   LATEST_TAG: latest
-  CONTAINER_FILE: deploy/lightspeed-stack/Containerfile
+  CONTAINER_FILE: deploy/lightspeed-stack/hack
 
 jobs:
   build-and-push-release:
@@ -33,6 +33,7 @@ jobs:
           submodules: 'recursive'
           # Fetch all tags to determine latest stable version
           fetch-tags: true
+          fetch-depth: 0
       - name: Determine if latest tag should be applied
         id: check_latest
         run: ./scripts/latest-tag.py
@@ -41,7 +42,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
-          tags: |
+          tags: >-
             ${{ env.GIT_TAG }}
             ${{ steps.check_latest.outputs.apply_latest == 'true' && env.LATEST_TAG || '' }}
           containerfiles: |
@@ -57,11 +58,11 @@ jobs:
         run: |
           set -x
           buildah manifest inspect ${{ steps.build_image.outputs.image-with-tag }}
-      - name: Push image to Quay.io
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build_image.outputs.image }}
-          tags: ${{ steps.build_image.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}
-          username: ${{ secrets.QUAY_REGISTRY_USERNAME }}
-          password: ${{ secrets.QUAY_REGISTRY_PASSWORD }}
+      # - name: Push image to Quay.io
+      #   uses: redhat-actions/push-to-registry@v2
+      #   with:
+      #     image: ${{ steps.build_image.outputs.image }}
+      #     tags: ${{ steps.build_image.outputs.tags }}
+      #     registry: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}
+      #     username: ${{ secrets.QUAY_REGISTRY_USERNAME }}
+      #     password: ${{ secrets.QUAY_REGISTRY_PASSWORD }}
